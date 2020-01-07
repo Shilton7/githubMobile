@@ -1,5 +1,6 @@
 import React from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
+import './config/Reactotron';
 
 const styles = StyleSheet.create({
     container: {
@@ -14,10 +15,15 @@ const styles = StyleSheet.create({
     },
 });
 
+console.tron.log('Rodando');
+
 export default function App() {
     return (
         <View style={styles.container}>
-            <Text style={styles.welcome}> Welcome to React sNative</Text>
+            <Text style={styles.welcome}>
+                {' '}
+                Welcome to React Native, by Shilton
+            </Text>
         </View>
     );
 }
