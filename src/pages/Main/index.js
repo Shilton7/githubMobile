@@ -1,7 +1,10 @@
 import React, { Component } from 'react';
-import { Keyboard } from 'react-native';
+import { Keyboard, ActivityIndicator } from 'react-native';
 import '../../config/Reactotron';
+import PropTypes from 'prop-types';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import AsyncStorage from '@react-native-community/async-storage';
+
 import {
     Container,
     Form,
@@ -18,13 +21,40 @@ import {
 import api from '../../services/api';
 
 export default class Main extends Component {
+    static navigationOptions = {
+        title: 'Usuários',
+    };
+
+    static propTypes = {
+        navigation: PropTypes.shape({
+            navigate: PropTypes.func,
+        }).isRequired,
+    };
+
     state = {
         novoUsuario: '',
         usuarios: [],
+        loading: false,
     };
+
+    async componentDidMount() {
+        const usuarios = await AsyncStorage.getItem('usuarios');
+
+        if (usuarios) {
+            this.setState({ usuarios: JSON.parse(usuarios) });
+        }
+    }
+
+    async componentDidUpdate(_, prevState) {
+        const { usuarios } = this.state;
+        if (prevState.usuarios !== usuarios) {
+            AsyncStorage.setItem('usuarios', JSON.stringify(usuarios));
+        }
+    }
 
     handleAddUsuario = async () => {
         const { usuarios, novoUsuario } = this.state;
+        this.setState({ loading: true });
 
         const response = await api.get(`/users/${novoUsuario}`);
         const data = {
@@ -37,13 +67,19 @@ export default class Main extends Component {
         this.setState({
             usuarios: [...usuarios, data],
             novoUsuario: '',
+            loading: false,
         });
 
         Keyboard.dismiss(); // hide teclado
     };
 
+    handleNavigate = usuario => {
+        const { navigation } = this.props;
+        navigation.navigate('User', { usuario }); //nome da tela ser chamada + Objeto
+    };
+
     render() {
-        const { usuarios, novoUsuario } = this.state;
+        const { usuarios, novoUsuario, loading } = this.state;
 
         return (
             <Container>
@@ -60,8 +96,15 @@ export default class Main extends Component {
                         }
                     />
 
-                    <SubmitButton onPress={this.handleAddUsuario}>
-                        <Icon name="person-add" size={20} color="#FFF" />
+                    <SubmitButton
+                        loading={loading}
+                        onPress={this.handleAddUsuario}
+                    >
+                        {loading ? (
+                            <ActivityIndicator color="#FFF" />
+                        ) : (
+                            <Icon name="person-add" size={20} color="#FFF" />
+                        )}
                     </SubmitButton>
                 </Form>
 
@@ -74,7 +117,9 @@ export default class Main extends Component {
                             <Name>{item.name}</Name>
                             <Bio>{item.bio}</Bio>
 
-                            <ProfileButton onPress={() => {}}>
+                            <ProfileButton
+                                onPress={() => this.handleNavigate(item)}
+                            >
                                 <ProfileButtonText>
                                     Ver perfil
                                 </ProfileButtonText>
@@ -86,7 +131,3 @@ export default class Main extends Component {
         );
     }
 }
-
-Main.navigationOptions = {
-    title: 'Usuários',
-};
